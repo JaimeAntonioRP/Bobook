@@ -30,6 +30,7 @@ class Api:
             autor = "Autor Desconocido"
             generos = ""
             portada_path = None
+            sinopsis = ""
 
             try:
                 book = epub.read_epub(ruta_archivo)
@@ -47,6 +48,11 @@ class Api:
                 subjects = book.get_metadata('DC', 'subject')
                 if subjects:
                     generos = ", ".join([s[0] for s in subjects])
+
+                # Obtener Sinopsis (Descripción)
+                descriptions = book.get_metadata('DC', 'description')
+                if descriptions:
+                    sinopsis = descriptions[0][0]
 
                 # Obtener Portada
                 covers = list(book.get_items_of_type(ebooklib.ITEM_COVER))
@@ -78,7 +84,7 @@ class Api:
                 # Si hay un error al leer el EPUB, usa el nombre del archivo
                 print(f"Error al procesar metadatos de EPUB: {e}")
 
-            if db.agregar_libro(titulo, ruta_archivo, autor, portada_path, generos):
+            if db.agregar_libro(titulo, ruta_archivo, autor, portada_path, generos, sinopsis):
                  print(f"Libro agregado: {titulo}")
 
     def delete_book(self, book_id):
@@ -95,6 +101,10 @@ class Api:
         
         db.eliminar_libro(book_id)
 
+    def update_progress(self, book_id, percentage, cfi):
+        """Guarda el progreso de lectura y la posición exacta (CFI) en la BD"""
+        db.actualizar_progreso(book_id, percentage, cfi)
+
 # --- RUTAS DE LA APP ---
 
 @app.route('/')
@@ -103,8 +113,15 @@ def home():
     Esta función se ejecuta al abrir la app.
     Carga tu diseño 'index.html'.
     """
-    # Aquí más adelante enviaremos los libros de la base de datos al HTML
-    return render_template('index.html')
+    l = db.obtener_libro_actual()
+    current_book = None
+    if l:
+        current_book = {
+            'id': l[0], 'titulo': l[1], 'ruta': l[2], 'es_favorito': l[3],
+            'progreso': l[4], 'autor': l[5], 'portada': l[6], 'genero': l[7], 
+            'ultimo_cfi': l[8], 'sinopsis': l[9]
+        }
+    return render_template('index.html', current_book=current_book)
 
 @app.route('/library')
 def library():
@@ -114,8 +131,8 @@ def library():
     libros_tuplas = db.obtener_libros()
     # Convertimos la lista de tuplas a una lista de diccionarios para Jinja2
     libros = [{
-        'id': l[0], 'titulo': l[1], 'ruta': l[2], 'es_favorito': l[3], 
-        'progreso': l[4], 'autor': l[5], 'portada': l[6], 'genero': l[7]
+        'id': l[0], 'titulo': l[1], 'ruta': l[2], 'es_favorito': l[3],
+        'progreso': l[4], 'autor': l[5], 'portada': l[6], 'genero': l[7], 'ultimo_cfi': l[8]
     } for l in libros_tuplas]
     return render_template('library.html', libros=libros)
 
@@ -127,7 +144,7 @@ def read_book(book_id):
     l = db.obtener_libro(book_id)
     if l:
         libro = {'id': l[0], 'titulo': l[1], 'ruta': l[2], 'es_favorito': l[3], 
-                 'progreso': l[4], 'autor': l[5], 'portada': l[6], 'genero': l[7]}
+                 'progreso': l[4], 'autor': l[5], 'portada': l[6], 'genero': l[7], 'ultimo_cfi': l[8]}
         return render_template('reader.html', libro=libro)
     return "Libro no encontrado", 404
 

@@ -17,7 +17,10 @@ class Database:
                 progreso INTEGER DEFAULT 0,
                 autor TEXT DEFAULT 'Autor Desconocido',
                 portada TEXT,
-                genero TEXT
+                genero TEXT,
+                ultimo_cfi TEXT,
+                ultima_lectura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                sinopsis TEXT DEFAULT ''
             )
         """)
         # Intentamos agregar las columnas por si la base de datos ya existía de antes
@@ -27,11 +30,23 @@ class Database:
             self.cursor.execute("ALTER TABLE libros ADD COLUMN genero TEXT")
         except sqlite3.OperationalError:
             pass # Las columnas ya existen
+        try:
+            self.cursor.execute("ALTER TABLE libros ADD COLUMN ultimo_cfi TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            self.cursor.execute("ALTER TABLE libros ADD COLUMN ultima_lectura TIMESTAMP")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            self.cursor.execute("ALTER TABLE libros ADD COLUMN sinopsis TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
         self.conn.commit()
 
-    def agregar_libro(self, titulo, ruta, autor="Autor Desconocido", portada=None, genero=""):
+    def agregar_libro(self, titulo, ruta, autor="Autor Desconocido", portada=None, genero="", sinopsis=""):
         try:
-            self.cursor.execute("INSERT INTO libros (titulo, ruta_archivo, autor, portada, genero) VALUES (?, ?, ?, ?, ?)", (titulo, ruta, autor, portada, genero))
+            self.cursor.execute("INSERT INTO libros (titulo, ruta_archivo, autor, portada, genero, sinopsis) VALUES (?, ?, ?, ?, ?, ?)", (titulo, ruta, autor, portada, genero, sinopsis))
             self.conn.commit()
             return True
         except sqlite3.IntegrityError:
@@ -39,12 +54,20 @@ class Database:
             return False
 
     def obtener_libros(self):
-        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero FROM libros")
+        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero, ultimo_cfi FROM libros")
         return self.cursor.fetchall()
 
     def obtener_libro(self, id_libro):
-        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero FROM libros WHERE id = ?", (id_libro,))
+        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero, ultimo_cfi FROM libros WHERE id = ?", (id_libro,))
         return self.cursor.fetchone()
+        
+    def obtener_libro_actual(self):
+        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero, ultimo_cfi, sinopsis FROM libros ORDER BY ultima_lectura DESC LIMIT 1")
+        return self.cursor.fetchone()
+
+    def actualizar_progreso(self, id_libro, progreso, cfi):
+        self.cursor.execute("UPDATE libros SET progreso = ?, ultimo_cfi = ?, ultima_lectura = CURRENT_TIMESTAMP WHERE id = ?", (progreso, cfi, id_libro))
+        self.conn.commit()
 
     def eliminar_libro(self, id_libro):
         self.cursor.execute("DELETE FROM libros WHERE id = ?", (id_libro,))

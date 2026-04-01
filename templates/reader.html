@@ -112,6 +112,44 @@
         </div>
         <div class="p-6 space-y-8 flex-1 overflow-y-auto">
             <div>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">auto_awesome_mosaic</span> Diseño</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btn-layout-1col" onclick="applyLayout('1col')" class="layout-btn text-slate-700 dark:text-slate-300 h-12 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs hover:border-primary transition-all shadow-sm flex flex-col items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">article</span>1 Columna
+                    </button>
+                    <button id="btn-layout-2col" onclick="applyLayout('2col')" class="layout-btn border-primary bg-primary/10 text-primary h-12 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs hover:border-primary transition-all shadow-sm flex flex-col items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">menu_book</span>2 Columnas
+                    </button>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">font_download</span> Fuente</h3>
+                <select id="fontSelector" onchange="changeFont(this.value)" class="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none cursor-pointer">
+                    <optgroup label="Serif (Recomendadas)">
+                        <option value="Lora">Lora</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Palatino Linotype">Palatino</option>
+                        <option value="Book Antiqua">Book Antiqua</option>
+                        <option value="Garamond">Garamond</option>
+                    </optgroup>
+                    <optgroup label="Sans-Serif (Modernas)">
+                        <option value="Inter">Inter</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Tahoma">Tahoma</option>
+                    </optgroup>
+                    <optgroup label="Otras">
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Trebuchet MS">Trebuchet MS</option>
+                        <option value="Century Gothic">Century Gothic</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Lucida Console">Lucida Console</option>
+                        <option value="Consolas">Consolas</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div>
                 <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">format_size</span> Tamaño de texto</h3>
                 <div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     <button onclick="changeFontSize(-10)" class="flex-1 py-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 shadow-sm transition-all">-</button>
@@ -137,58 +175,139 @@
         // 2. Inicializamos epub.js
         const book = ePub(bookUrl);
         
-        // 3. Renderizamos en modo paginado (Estilo libro físico)
-        const rendition = book.renderTo("viewer", {
-            width: "100%",
-            height: "100%",
-            spread: "auto", // Muestra 2 páginas en pantallas anchas, 1 en móviles
-            flow: "paginated"
-        });
+        let rendition;
+        let currentFontSize = parseInt(localStorage.getItem('reader_fontSize')) || 100;
+        let currentTheme = localStorage.getItem('reader_theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        let currentLayout = localStorage.getItem('reader_layout') || '2col';
+        let currentFont = localStorage.getItem('reader_font') || 'Lora';
 
         // Navegación con rueda del ratón
         let wheelTimeout;
         function handleWheel(e) {
-            if (wheelTimeout) return;
+            if (wheelTimeout || !rendition) return;
             wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 150); // Evita saltar varias páginas de golpe
             if (e.deltaY > 0) rendition.next();
             else if (e.deltaY < 0) rendition.prev();
         }
         document.addEventListener('wheel', handleWheel);
-        rendition.hooks.content.register(function(contents) {
-            contents.window.addEventListener('wheel', handleWheel); // Detectar scroll dentro del iframe
-        });
 
-        // 4. Configurar Temas Inmersivos
-        rendition.themes.register("light", { "body": { "background": "transparent", "color": "#1e293b", "font-family": "Lora, serif" }});
-        rendition.themes.register("dark", { "body": { "background": "transparent", "color": "#cbd5e1", "font-family": "Lora, serif" }});
-        rendition.themes.register("sepia", { "body": { "background": "transparent", "color": "#5b4636", "font-family": "Lora, serif" }});
-        
-        let currentFontSize = 100;
-        let currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-        
+        function initRendition() {
+            const spreadMode = currentLayout === '1col' ? 'none' : 'auto';
+            rendition = book.renderTo("viewer", {
+                width: "100%",
+                height: "100%",
+                spread: spreadMode,
+                flow: "paginated"
+            });
+
+            rendition.hooks.content.register(function(contents) {
+                contents.window.addEventListener('wheel', handleWheel); // Detectar scroll dentro del iframe
+            });
+
+            // Configurar Temas Inmersivos (usando !important y aplicando la fuente directamente)
+            rendition.themes.register("light", { 
+                "*": { "font-family": `${currentFont}, serif !important`, "color": "#1e293b !important" },
+                "body": { "background": "transparent" }
+            });
+            rendition.themes.register("dark", { 
+                "*": { "font-family": `${currentFont}, serif !important`, "color": "#ffffff !important" },
+                "body": { "background": "transparent" }
+            });
+            rendition.themes.register("sepia", { 
+                "*": { "font-family": `${currentFont}, serif !important`, "color": "#5b4636 !important" },
+                "body": { "background": "transparent" }
+            });
+        }
+
         function applyTheme(themeName) {
             currentTheme = themeName;
+            localStorage.setItem('reader_theme', themeName);
             rendition.themes.select(themeName);
             
-            // Cambiar fondo del contenedor exterior
+            // Cambiar fondo del contenedor exterior y sincronizar UI de Tailwind
             const body = document.getElementById('bodyContainer');
-            if(themeName === 'light') body.className = 'bg-[#f8f9fa] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
-            if(themeName === 'dark') body.className = 'bg-[#0f1115] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
-            if(themeName === 'sepia') body.className = 'bg-[#f4ecd8] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+            if(themeName === 'light') {
+                body.className = 'bg-[#f8f9fa] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+                document.documentElement.classList.remove('dark');
+            }
+            if(themeName === 'dark') {
+                body.className = 'bg-[#0f1115] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+                document.documentElement.classList.add('dark');
+            }
+            if(themeName === 'sepia') {
+                body.className = 'bg-[#f4ecd8] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+                document.documentElement.classList.remove('dark');
+            }
         }
 
         function changeFontSize(change) {
             currentFontSize += change;
             if(currentFontSize < 50) currentFontSize = 50;
             if(currentFontSize > 250) currentFontSize = 250;
+            localStorage.setItem('reader_fontSize', currentFontSize);
             rendition.themes.fontSize(currentFontSize + "%");
             document.getElementById('fontSizeDisplay').textContent = currentFontSize + "%";
         }
+        
+        function changeFont(fontName) {
+            currentFont = fontName;
+            localStorage.setItem('reader_font', fontName);
+            // Forzar un redibujado es la forma más segura de aplicar la nueva fuente
+            applyLayout(currentLayout, true);
+        }
+        
+        function applyLayout(layout, forceRedraw = false) {
+            if (currentLayout === layout && !forceRedraw) return;
+            currentLayout = layout;
+            localStorage.setItem('reader_layout', layout);
+            
+            const loc = rendition.currentLocation() ? rendition.currentLocation().start.cfi : null;
+            
+            rendition.destroy(); // Destruimos el visor actual para cambiar el diseño base
+            initRendition();     // Creamos uno nuevo
+            applyTheme(currentTheme);
+            rendition.themes.fontSize(currentFontSize + "%");
+            
+            if (loc) rendition.display(loc);
+            else rendition.display();
+            
+            // Actualizar botones UI
+            document.querySelectorAll('.layout-btn').forEach(b => {
+                b.classList.remove('border-primary', 'bg-primary/10', 'text-primary');
+                b.classList.add('text-slate-700', 'dark:text-slate-300');
+            });
+            const activeBtn = document.getElementById('btn-layout-' + layout);
+            activeBtn.classList.remove('text-slate-700', 'dark:text-slate-300');
+            activeBtn.classList.add('border-primary', 'bg-primary/10', 'text-primary');
+            
+            // Reasignar eventos (ya que destroy() los elimina)
+            setupRenditionEvents();
+        }
 
-        // Renderizar y manejar posibles errores
-        rendition.display().catch(err => console.error("Error al renderizar:", err));
-        applyTheme(currentTheme); // Aplicar tema inicial
+        // Inicialización primaria
+        initRendition();
+        applyTheme(currentTheme);
+        rendition.themes.fontSize(currentFontSize + "%");
+        
+        // Reanudación inteligente: Verificamos si Python nos envió un CFI guardado
+        let initialCfi = "{{ libro.ultimo_cfi if libro.ultimo_cfi else '' }}";
+        let displayPromise = initialCfi ? rendition.display(initialCfi) : rendition.display();
+        
+        displayPromise.catch(err => {
+            console.error("Error al renderizar:", err);
+            alert("No se pudo abrir el libro.\n\n1. Es posible que hayas movido o borrado el archivo original de tu PC.\n2. El archivo podría estar dañado o tener protección DRM.\n\nIntenta eliminarlo de tu biblioteca y agregarlo nuevamente.");
+        });
 
+        // Sincronizar la Interfaz de Usuario (UI) con los ajustes guardados al cargar
+        document.getElementById('fontSelector').value = currentFont;
+        document.getElementById('fontSizeDisplay').textContent = currentFontSize + "%";
+        document.querySelectorAll('.layout-btn').forEach(b => {
+            b.classList.remove('border-primary', 'bg-primary/10', 'text-primary');
+            b.classList.add('text-slate-700', 'dark:text-slate-300');
+        });
+        const activeBtn = document.getElementById('btn-layout-' + currentLayout);
+        activeBtn.classList.add('border-primary', 'bg-primary/10', 'text-primary');
+        
         book.ready.catch(err => {
             console.error("Error al cargar el archivo epub:", err);
             alert("No se pudo cargar el libro. Es posible que el archivo haya sido movido o eliminado de tu computadora.");
@@ -241,6 +360,7 @@
             updateProgress();
         });
 
+        let saveProgressTimeout;
         function updateProgress() {
             const currentLocation = rendition.currentLocation();
             if (currentLocation && currentLocation.start) {
@@ -253,23 +373,37 @@
                 if (chapter) {
                     document.getElementById('chapterName').textContent = chapter.label;
                 }
+
+                // Guardar en la base de datos (usamos un pequeño delay de medio segundo para no sobrecargar el sistema al scrollear)
+                clearTimeout(saveProgressTimeout);
+                saveProgressTimeout = setTimeout(() => {
+                    if (window.pywebview && window.pywebview.api) {
+                        window.pywebview.api.update_progress({{ libro.id }}, percentage, currentLocation.start.cfi);
+                    }
+                }, 500);
             }
         }
 
-        // Escuchar cuando el usuario cambia de página para actualizar el footer
-        rendition.on("relocated", function(location) {
-            updateProgress();
-        });
+        // Eventos a encapsular porque rendition se puede recrear al cambiar de diseño
+        function setupRenditionEvents() {
+            // Escuchar cuando el usuario cambia de página para actualizar el footer
+            rendition.on("relocated", function(location) {
+                updateProgress();
+            });
 
-        // Zonas de clic interactivo (Aquile style)
-        rendition.on("click", function(e) {
-            const width = window.innerWidth;
-            const x = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+            // Zonas de clic interactivo (Aquile style)
+            rendition.on("click", function(e) {
+                const width = window.innerWidth;
+                const x = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+                
+                if (x < width * 0.25) rendition.prev(); // Clic izquierdo: atrás
+                else if (x > width * 0.75) rendition.next(); // Clic derecho: adelante
+                else toggleUI(); // Clic al centro: Mostrar/Ocultar Menú
+            });
             
-            if (x < width * 0.25) rendition.prev(); // Clic izquierdo: atrás
-            else if (x > width * 0.75) rendition.next(); // Clic derecho: adelante
-            else toggleUI(); // Clic al centro: Mostrar/Ocultar Menú
-        });
+            rendition.on('keyup', handleKeyboard);
+        }
+        setupRenditionEvents();
 
         // Funciones de Control de Interfaz
         function toggleTOC() {
@@ -343,7 +477,6 @@
             }
         }
         document.addEventListener('keyup', handleKeyboard);
-        rendition.on('keyup', handleKeyboard); // Detectar teclado si el foco está en el libro
     </script>
 </body>
 </html>
