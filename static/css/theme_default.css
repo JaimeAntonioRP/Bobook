@@ -1,0 +1,47 @@
+/* static/css/theme_default.css */
+
+/* 1. IMPORTAMOS LA FUENTE DIRECTAMENTE AQUÍ (OBLIGATORIO) */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+/* 2. CONFIGURACIÓN DE ICONOS */
+.material-symbols-outlined {
+  /* Es crucial que el nombre coincida exactamente con el del @import */
+  font-family: 'Material Symbols Outlined'; 
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  
+  /* Ajustes finos para que se vean nítidos */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga';
+}
+
+/* 3. ESTILOS GENERALES DE TU APP */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #282e39;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3b4354;
+}
+
+.active-nav {
+    background-color: rgba(19, 91, 236, 0.1);
+    border-left: 3px solid #135bec;
+}
