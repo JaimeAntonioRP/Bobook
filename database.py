@@ -14,14 +14,24 @@ class Database:
                 titulo TEXT,
                 ruta_archivo TEXT UNIQUE,
                 es_favorito INTEGER DEFAULT 0,
-                progreso INTEGER DEFAULT 0
+                progreso INTEGER DEFAULT 0,
+                autor TEXT DEFAULT 'Autor Desconocido',
+                portada TEXT,
+                genero TEXT
             )
         """)
+        # Intentamos agregar las columnas por si la base de datos ya existía de antes
+        try:
+            self.cursor.execute("ALTER TABLE libros ADD COLUMN autor TEXT DEFAULT 'Autor Desconocido'")
+            self.cursor.execute("ALTER TABLE libros ADD COLUMN portada TEXT")
+            self.cursor.execute("ALTER TABLE libros ADD COLUMN genero TEXT")
+        except sqlite3.OperationalError:
+            pass # Las columnas ya existen
         self.conn.commit()
 
-    def agregar_libro(self, titulo, ruta):
+    def agregar_libro(self, titulo, ruta, autor="Autor Desconocido", portada=None, genero=""):
         try:
-            self.cursor.execute("INSERT INTO libros (titulo, ruta_archivo) VALUES (?, ?)", (titulo, ruta))
+            self.cursor.execute("INSERT INTO libros (titulo, ruta_archivo, autor, portada, genero) VALUES (?, ?, ?, ?, ?)", (titulo, ruta, autor, portada, genero))
             self.conn.commit()
             return True
         except sqlite3.IntegrityError:
@@ -29,8 +39,16 @@ class Database:
             return False
 
     def obtener_libros(self):
-        self.cursor.execute("SELECT * FROM libros")
+        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero FROM libros")
         return self.cursor.fetchall()
+
+    def obtener_libro(self, id_libro):
+        self.cursor.execute("SELECT id, titulo, ruta_archivo, es_favorito, progreso, autor, portada, genero FROM libros WHERE id = ?", (id_libro,))
+        return self.cursor.fetchone()
+
+    def eliminar_libro(self, id_libro):
+        self.cursor.execute("DELETE FROM libros WHERE id = ?", (id_libro,))
+        self.conn.commit()
 
     def alternar_favorito(self, libro_id, estado_actual):
         nuevo_estado = 0 if estado_actual == 1 else 1

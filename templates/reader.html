@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Leyendo: {{ libro.titulo }} - Reader Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme_default.css') }}">
+
+    <!-- Librerías para renderizar EPUB -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "serif": ["Lora", "serif"]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300" id="bodyContainer">
+    
+    <!-- Barra de herramientas superior (Flotante) -->
+    <header id="readerHeader" class="absolute top-0 left-0 w-full flex items-center justify-between px-6 py-2 bg-white/90 dark:bg-[#111318]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-30 shadow-sm transition-transform duration-300 translate-y-0">
+        <div class="flex items-center gap-4">
+            <!-- Botón de Índice -->
+            <button onclick="toggleTOC()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Índice de Capítulos">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <!-- Botón para regresar, usa history.back() para volver a donde estábamos -->
+            <button onclick="history.back()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Regresar">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div>
+                <h1 class="font-bold text-sm leading-tight text-slate-900 dark:text-white">{{ libro.titulo }}</h1>
+                <p class="text-xs text-slate-500">{{ libro.autor }}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Botón de Configuración -->
+            <button onclick="toggleSettings()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Configuración de lectura">
+                <span class="material-symbols-outlined">text_format</span>
+            </button>
+            <!-- Botón de Pantalla Completa -->
+            <button onclick="toggleFullscreen()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Pantalla Completa">
+                <span id="fullscreenIcon" class="material-symbols-outlined">fullscreen</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Pie de página (Progreso de lectura Flotante) -->
+    <footer id="readerFooter" class="absolute bottom-0 left-0 w-full px-6 py-2 bg-white/90 dark:bg-[#111318]/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-30 flex justify-between items-center transition-transform duration-300 translate-y-0">
+        <span id="chapterName" class="text-xs font-semibold text-slate-500 truncate max-w-[50%]">Cargando contenido...</span>
+        <span id="readingProgress" class="text-xs font-bold text-primary">Calculando...</span>
+    </footer>
+
+    <!-- Área de Lectura (Fondo completo) -->
+    <main class="absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
+        
+        <!-- Contenedor del Libro -->
+        <div id="viewer" class="w-full h-full max-w-5xl px-4 sm:px-12 py-16 transition-colors duration-300">
+            <!-- epub.js insertará el iframe aquí automáticamente -->
+        </div>
+    </main>
+
+    <!-- Menú Lateral (Índice de Capítulos) -->
+    <div id="tocOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity" onclick="toggleTOC()"></div>
+    <aside id="tocSidebar" class="fixed inset-y-0 left-0 w-80 bg-white dark:bg-[#1c1f27] shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+            <h2 class="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                <span class="material-symbols-outlined text-primary">format_list_bulleted</span>
+                Índice
+            </h2>
+            <button onclick="toggleTOC()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div id="tocContent" class="flex-1 overflow-y-auto p-4 space-y-1">
+            <!-- Los capítulos se cargarán aquí desde JS -->
+            <p class="text-sm text-slate-500 text-center mt-10">Cargando índice...</p>
+        </div>
+    </aside>
+
+    <!-- Menú Lateral (Configuración Visual) -->
+    <div id="settingsOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity" onclick="toggleSettings()"></div>
+    <aside id="settingsSidebar" class="fixed inset-y-0 right-0 w-80 bg-white dark:bg-[#1c1f27] shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+            <h2 class="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                <span class="material-symbols-outlined text-primary">tune</span>
+                Apariencia
+            </h2>
+            <button onclick="toggleSettings()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-8 flex-1 overflow-y-auto">
+            <div>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">format_size</span> Tamaño de texto</h3>
+                <div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button onclick="changeFontSize(-10)" class="flex-1 py-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 shadow-sm transition-all">-</button>
+                    <span id="fontSizeDisplay" class="text-sm font-bold w-12 text-center text-primary">100%</span>
+                    <button onclick="changeFontSize(10)" class="flex-1 py-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 shadow-sm transition-all">+</button>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">palette</span> Tema</h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="applyTheme('light')" class="h-14 rounded-xl border-2 border-slate-200 bg-white text-black font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-white border border-slate-300"></div>Claro</button>
+                    <button onclick="applyTheme('sepia')" class="h-14 rounded-xl border-2 border-[#e6d9b9] bg-[#f4ecd8] text-[#5b4636] font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-[#f4ecd8] border border-[#d5c39b]"></div>Sepia</button>
+                    <button onclick="applyTheme('dark')" class="h-14 rounded-xl border-2 border-slate-700 bg-[#121212] text-slate-300 font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-[#121212] border border-slate-600"></div>Oscuro</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // 1. Apuntamos a la nueva ruta de Flask que sirve el archivo EPUB
+        const bookUrl = "{{ url_for('serve_book', book_id=libro.id) }}";
+        
+        // 2. Inicializamos epub.js
+        const book = ePub(bookUrl);
+        
+        // 3. Renderizamos en modo paginado (Estilo libro físico)
+        const rendition = book.renderTo("viewer", {
+            width: "100%",
+            height: "100%",
+            spread: "auto", // Muestra 2 páginas en pantallas anchas, 1 en móviles
+            flow: "paginated"
+        });
+
+        // Navegación con rueda del ratón
+        let wheelTimeout;
+        function handleWheel(e) {
+            if (wheelTimeout) return;
+            wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 150); // Evita saltar varias páginas de golpe
+            if (e.deltaY > 0) rendition.next();
+            else if (e.deltaY < 0) rendition.prev();
+        }
+        document.addEventListener('wheel', handleWheel);
+        rendition.hooks.content.register(function(contents) {
+            contents.window.addEventListener('wheel', handleWheel); // Detectar scroll dentro del iframe
+        });
+
+        // 4. Configurar Temas Inmersivos
+        rendition.themes.register("light", { "body": { "background": "transparent", "color": "#1e293b", "font-family": "Lora, serif" }});
+        rendition.themes.register("dark", { "body": { "background": "transparent", "color": "#cbd5e1", "font-family": "Lora, serif" }});
+        rendition.themes.register("sepia", { "body": { "background": "transparent", "color": "#5b4636", "font-family": "Lora, serif" }});
+        
+        let currentFontSize = 100;
+        let currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        
+        function applyTheme(themeName) {
+            currentTheme = themeName;
+            rendition.themes.select(themeName);
+            
+            // Cambiar fondo del contenedor exterior
+            const body = document.getElementById('bodyContainer');
+            if(themeName === 'light') body.className = 'bg-[#f8f9fa] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+            if(themeName === 'dark') body.className = 'bg-[#0f1115] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+            if(themeName === 'sepia') body.className = 'bg-[#f4ecd8] antialiased h-screen w-screen overflow-hidden relative transition-colors duration-300';
+        }
+
+        function changeFontSize(change) {
+            currentFontSize += change;
+            if(currentFontSize < 50) currentFontSize = 50;
+            if(currentFontSize > 250) currentFontSize = 250;
+            rendition.themes.fontSize(currentFontSize + "%");
+            document.getElementById('fontSizeDisplay').textContent = currentFontSize + "%";
+        }
+
+        // Renderizar y manejar posibles errores
+        rendition.display().catch(err => console.error("Error al renderizar:", err));
+        applyTheme(currentTheme); // Aplicar tema inicial
+
+        book.ready.catch(err => {
+            console.error("Error al cargar el archivo epub:", err);
+            alert("No se pudo cargar el libro. Es posible que el archivo haya sido movido o eliminado de tu computadora.");
+        });
+
+        // Extraer y construir el Índice (TOC) y mapear capítulos
+        let flatToc = [];
+        book.loaded.navigation.then(function(toc) {
+            const tocContent = document.getElementById('tocContent');
+            tocContent.innerHTML = ''; // Limpiamos el mensaje de "Cargando..."
+            
+            if (toc.length === 0) {
+                tocContent.innerHTML = '<p class="text-sm text-slate-500 text-center mt-10">Este libro no tiene índice.</p>';
+                return;
+            }
+
+            function flattenToc(items) {
+                items.forEach(item => { flatToc.push(item); if (item.subitems) flattenToc(item.subitems); });
+            }
+            flattenToc(toc);
+
+            // Función para renderizar el menú y soportar subcapítulos
+            function renderTOC(tocItems, container, level = 0) {
+                tocItems.forEach(function(chapter) {
+                    const a = document.createElement('a');
+                    a.href = "#";
+                    a.className = `block py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 transition-colors ${level > 0 ? 'ml-4 px-4 border-l-2 border-slate-200 dark:border-slate-700' : 'px-4 font-medium'}`;
+                    a.textContent = chapter.label;
+                    a.onclick = (e) => {
+                        e.preventDefault();
+                        rendition.display(chapter.href);
+                        toggleTOC(); // Cierra el menú automáticamente al seleccionar
+                    };
+                    container.appendChild(a);
+                    
+                    // Si hay subcapítulos, iteramos de nuevo (recursión)
+                    if (chapter.subitems && chapter.subitems.length > 0) {
+                        renderTOC(chapter.subitems, container, level + 1);
+                    }
+                });
+            }
+            
+            renderTOC(toc, tocContent);
+        });
+
+        // Generar ubicaciones para la barra de progreso (toma unos segundos en libros grandes)
+        book.ready.then(() => {
+            return book.locations.generate(1600);
+        }).then(() => {
+            updateProgress();
+        });
+
+        function updateProgress() {
+            const currentLocation = rendition.currentLocation();
+            if (currentLocation && currentLocation.start) {
+                // Porcentaje
+                const percentage = Math.round(currentLocation.start.percentage * 100);
+                document.getElementById('readingProgress').textContent = percentage + '%';
+                
+                // Nombre del Capítulo Actual
+                const chapter = flatToc.find(item => item.href.includes(currentLocation.start.href.split('#')[0]));
+                if (chapter) {
+                    document.getElementById('chapterName').textContent = chapter.label;
+                }
+            }
+        }
+
+        // Escuchar cuando el usuario cambia de página para actualizar el footer
+        rendition.on("relocated", function(location) {
+            updateProgress();
+        });
+
+        // Zonas de clic interactivo (Aquile style)
+        rendition.on("click", function(e) {
+            const width = window.innerWidth;
+            const x = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+            
+            if (x < width * 0.25) rendition.prev(); // Clic izquierdo: atrás
+            else if (x > width * 0.75) rendition.next(); // Clic derecho: adelante
+            else toggleUI(); // Clic al centro: Mostrar/Ocultar Menú
+        });
+
+        // Funciones de Control de Interfaz
+        function toggleTOC() {
+            const sidebar = document.getElementById('tocSidebar');
+            const overlay = document.getElementById('tocOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+        
+        function toggleSettings() {
+            const sidebar = document.getElementById('settingsSidebar');
+            const overlay = document.getElementById('settingsOverlay');
+            sidebar.classList.toggle('translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        let uiVisible = true;
+        function toggleUI() {
+            uiVisible = !uiVisible;
+            const header = document.getElementById('readerHeader');
+            const footer = document.getElementById('readerFooter');
+            
+            if (uiVisible) {
+                header.classList.remove('-translate-y-full');
+                footer.classList.remove('translate-y-full');
+            } else {
+                header.classList.add('-translate-y-full');
+                footer.classList.add('translate-y-full');
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log("Fullscreen API no soportada"));
+                if(uiVisible) toggleUI(); // Ocultar UI al entrar en pantalla completa
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // Detectar si el usuario sale de pantalla completa con la tecla ESC
+        document.addEventListener('fullscreenchange', () => {
+            const icon = document.getElementById('fullscreenIcon');
+            if (!document.fullscreenElement) {
+                icon.textContent = 'fullscreen';
+                if(!uiVisible) toggleUI();
+            } else {
+                icon.textContent = 'fullscreen_exit';
+            }
+        });
+
+        // 4. Lógica de navegación por Teclado
+        function handleKeyboard(e) {
+            if (e.key === 'ArrowLeft') rendition.prev();
+            if (e.key === 'ArrowRight') rendition.next();
+            
+            // Saltar de capítulo con Arriba / Abajo
+            if (e.key === 'ArrowUp') {
+                const loc = rendition.currentLocation();
+                if (loc && loc.start) {
+                    const prevSpine = book.spine.get(loc.start.index - 1);
+                    if (prevSpine) rendition.display(prevSpine.href);
+                }
+            }
+            if (e.key === 'ArrowDown') {
+                const loc = rendition.currentLocation();
+                if (loc && loc.start) {
+                    const nextSpine = book.spine.get(loc.start.index + 1);
+                    if (nextSpine) rendition.display(nextSpine.href);
+                }
+            }
+        }
+        document.addEventListener('keyup', handleKeyboard);
+        rendition.on('keyup', handleKeyboard); // Detectar teclado si el foco está en el libro
+    </script>
+</body>
+</html>
