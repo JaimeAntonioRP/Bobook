@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ t('Configuración') }} - Reader Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto pb-10">
+    <h1 class="text-3xl md:text-4xl font-bold mb-8 flex items-center gap-3 text-slate-900 dark:text-white">
+        <span class="material-symbols-outlined text-primary text-[40px]">settings</span>
+        {{ t('Configuración') }}
+    </h1>
+
+    <div class="space-y-8">
+        <!-- APARIENCIA -->
+        <div class="bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 text-slate-800 dark:text-slate-100">
+                <span class="material-symbols-outlined text-primary">palette</span>
+                {{ t('Apariencia Global') }}
+            </h2>
+            
+            <div class="space-y-8">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{{ t('Modo de Interfaz') }}</label>
+                    <div class="flex gap-4">
+                        <button onclick="setGlobalTheme('light')" id="btn-theme-light" class="flex-1 py-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-800 font-bold text-sm hover:border-primary transition-all flex items-center justify-center gap-2 shadow-sm">
+                            <span class="material-symbols-outlined text-[20px]">light_mode</span> {{ t('Claro') }}
+                        </button>
+                        <button onclick="setGlobalTheme('dark')" id="btn-theme-dark" class="flex-1 py-3.5 rounded-xl border-2 border-slate-700 bg-[#121212] text-white font-bold text-sm hover:border-primary transition-all flex items-center justify-center gap-2 shadow-sm">
+                            <span class="material-symbols-outlined text-[20px]">dark_mode</span> {{ t('Oscuro') }}
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{{ t('Color de Acento (Primario)') }}</label>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <button onclick="setPrimaryColor('#135bec')" class="w-12 h-12 rounded-full bg-[#135bec] shadow-md border-4 border-transparent hover:scale-110 transition-transform color-btn" data-color="#135bec" title="Azul (Por defecto)"></button>
+                        <button onclick="setPrimaryColor('#8b5cf6')" class="w-12 h-12 rounded-full bg-[#8b5cf6] shadow-md border-4 border-transparent hover:scale-110 transition-transform color-btn" data-color="#8b5cf6" title="Morado"></button>
+                        <button onclick="setPrimaryColor('#10b981')" class="w-12 h-12 rounded-full bg-[#10b981] shadow-md border-4 border-transparent hover:scale-110 transition-transform color-btn" data-color="#10b981" title="Verde"></button>
+                        <button onclick="setPrimaryColor('#f97316')" class="w-12 h-12 rounded-full bg-[#f97316] shadow-md border-4 border-transparent hover:scale-110 transition-transform color-btn" data-color="#f97316" title="Naranja"></button>
+                        <button onclick="setPrimaryColor('#ec4899')" class="w-12 h-12 rounded-full bg-[#ec4899] shadow-md border-4 border-transparent hover:scale-110 transition-transform color-btn" data-color="#ec4899" title="Rosa"></button>
+                        <button onclick="setPrimaryColor('#eab308')" class="w-12 h-12 rounded-full bg-[#eab308] shadow-md border-4 border-transparent hover:scale-110 transition-transform color-btn" data-color="#eab308" title="Amarillo"></button>
+                        
+                        <div class="w-[1px] h-8 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+                        
+                        <div class="relative w-12 h-12 rounded-full overflow-hidden shadow-md hover:scale-110 transition-transform border-4 border-transparent flex items-center justify-center bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 color-btn" id="custom-color-btn" title="{{ t('Color personalizado') }}">
+                            <input type="color" id="customColorInput" onchange="setPrimaryColor(this.value)" class="absolute -inset-2 w-16 h-16 opacity-0 cursor-pointer">
+                            <span class="material-symbols-outlined text-white text-[20px] pointer-events-none drop-shadow-md">colorize</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BIBLIOTECA -->
+        <div class="bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 text-slate-800 dark:text-slate-100">
+                <span class="material-symbols-outlined text-primary">photo_library</span>
+                {{ t('Cuadrícula de la Biblioteca') }}
+            </h2>
+            
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{{ t('Tamaño de las Portadas') }}</label>
+                <div class="grid grid-cols-3 gap-4">
+                    <button onclick="setCoverSize('small')" id="btn-size-small" class="py-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-bold text-sm hover:border-primary transition-all flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">view_comfy</span> {{ t('Pequeño') }}
+                    </button>
+                    <button onclick="setCoverSize('medium')" id="btn-size-medium" class="py-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-bold text-sm hover:border-primary transition-all flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-[28px]">grid_view</span> {{ t('Mediano') }}
+                    </button>
+                    <button onclick="setCoverSize('large')" id="btn-size-large" class="py-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-bold text-sm hover:border-primary transition-all flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-[36px]">window</span> {{ t('Grande') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GENERAL -->
+        <div class="bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 text-slate-800 dark:text-slate-100">
+                <span class="material-symbols-outlined text-primary">translate</span>
+                {{ t('General') }}
+            </h2>
+            
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{{ t('Idioma de la Interfaz') }}</label>
+                <select id="languageSelect" onchange="setLanguage(this.value)" class="w-full md:w-1/2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none cursor-pointer">
+                    <option value="es">Español</option>
+                    <option value="en">English (Inglés)</option>
+                </select>
+                <p class="text-xs text-slate-500 mt-2 italic">{{ t('* La aplicación recargará para aplicar los cambios de configuración al instante.') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Cargar valores visuales actuales ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentTheme = localStorage.getItem('app_theme') || 'dark';
+        const currentColor = localStorage.getItem('app_primary_color') || '#135bec';
+        const currentSize = localStorage.getItem('app_cover_size') || 'medium';
+        const currentLang = localStorage.getItem('app_lang') || 'es';
+
+        // Tema
+        document.getElementById(`btn-theme-${currentTheme}`).classList.add('border-primary', 'text-primary');
+        document.getElementById(`btn-theme-${currentTheme}`).classList.remove('text-slate-800', 'text-white');
+        
+        // Color
+        let colorFound = false;
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            if (btn.dataset.color === currentColor) {
+                btn.classList.add('border-slate-800', 'dark:border-white', 'scale-110');
+                colorFound = true;
+            }
+        });
+        if (!colorFound) {
+            // Si era un color personalizado que no está en la lista de botones rápidos
+            document.getElementById('custom-color-btn').classList.add('border-slate-800', 'dark:border-white', 'scale-110');
+        }
+        document.getElementById('customColorInput').value = currentColor;
+
+        // Tamaño Portadas
+        document.getElementById(`btn-size-${currentSize}`).classList.add('border-primary', 'text-primary', 'bg-primary/10');
+        document.getElementById(`btn-size-${currentSize}`).classList.remove('text-slate-600', 'dark:text-slate-400');
+
+        // Idioma
+        document.getElementById('languageSelect').value = currentLang;
+    });
+
+    // --- Funciones para guardar preferencias ---
+    // Usamos window.location.reload() porque Tailwind escanea y genera el CSS al vuelo. Al recargar, se aplican los nuevos colores en toda la app de golpe.
+    function setGlobalTheme(theme) { localStorage.setItem('app_theme', theme); window.location.reload(); }
+    function setPrimaryColor(color) { localStorage.setItem('app_primary_color', color); window.location.reload(); }
+    function setCoverSize(size) { localStorage.setItem('app_cover_size', size); window.location.reload(); }
+    function setLanguage(lang) { 
+        localStorage.setItem('app_lang', lang); 
+        document.cookie = "app_lang=" + lang + "; path=/; max-age=31536000";
+        window.location.reload(); 
+    }
+</script>
+{% endblock %}

@@ -2,36 +2,34 @@
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-bold flex items-center gap-2">
             <span class="material-symbols-outlined text-orange-500">new_releases</span>
-            Recently Added
+            {{ t('Recently Added') }}
         </h2>
-        <a class="text-primary text-sm font-semibold hover:underline" href="#">Manage Library</a>
+        <a class="text-primary text-sm font-semibold hover:underline" href="{{ url_for('library') }}">{{ t('Manage Library') }}</a>
     </div>
+    {% if recientes %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 hover:border-primary transition-all group">
-            <div class="w-16 h-24 rounded-md overflow-hidden bg-slate-200 flex-shrink-0 shadow-sm">
-                <div class="w-full h-full bg-slate-400"></div>
+        {% for libro in recientes %}
+        <div class="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 hover:border-primary transition-all group cursor-pointer" onclick="window.location.href='{{ url_for('book_details', book_id=libro.id) }}'">
+            <div class="w-16 h-24 rounded-md overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 shadow-sm relative">
+                {% if libro.portada %}
+                    <img src="{{ url_for('static', filename=libro.portada) }}" alt="Portada de {{ libro.titulo }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-slate-400">
+                        <span class="material-symbols-outlined text-2xl">menu_book</span>
+                    </div>
+                {% endif %}
             </div>
             <div class="flex-1 overflow-hidden">
-                <h4 class="font-serif font-bold text-sm truncate">Sapiens</h4>
-                <p class="text-xs text-slate-500 mb-2">Yuval Noah Harari</p>
-                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-medium italic">Non-Fiction</span>
+                <h4 class="font-serif font-bold text-sm truncate group-hover:text-primary transition-colors">{{ libro.titulo }}</h4>
+                <p class="text-xs text-slate-500 mb-2 truncate">{{ libro.autor }}</p>
+                {% if libro.genero %}
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-medium italic truncate max-w-full inline-block">{{ libro.genero }}</span>
+                {% endif %}
             </div>
-            <button class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary transition-all">
-                <span class="material-symbols-outlined">more_vert</span>
-            </button>
         </div>
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 hover:border-primary transition-all group">
-            <div class="w-16 h-24 rounded-md overflow-hidden bg-slate-200 flex-shrink-0 shadow-sm">
-                <div class="w-full h-full bg-slate-500"></div>
-            </div>
-            <div class="flex-1 overflow-hidden">
-                <h4 class="font-serif font-bold text-sm truncate">Atomic Habits</h4>
-                <p class="text-xs text-slate-500 mb-2">James Clear</p>
-                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-medium italic">Self-Help</span>
-            </div>
-            <button class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary transition-all">
-                <span class="material-symbols-outlined">more_vert</span>
-            </button>
-        </div>
+        {% endfor %}
     </div>
+    {% else %}
+        <p class="text-slate-500 text-sm italic">{{ t('Aún no has agregado ningún libro a tu biblioteca.') }}</p>
+    {% endif %}
 </section>

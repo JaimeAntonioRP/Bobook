@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ libro.titulo }} - {{ t('Detalles') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Botón Volver -->
+    <button onclick="history.back()" class="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors mb-6 font-medium">
+        <span class="material-symbols-outlined">arrow_back</span>
+        {{ t('Volver') }}
+    </button>
+
+    <div class="bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 flex flex-col md:flex-row gap-10 relative">
+        
+        <!-- Portada -->
+        <div class="w-full md:w-1/3 flex-shrink-0">
+            <div class="aspect-[2/3] rounded-xl overflow-hidden shadow-lg bg-slate-200 dark:bg-slate-700 relative">
+                {% if libro.portada %}
+                    <img src="{{ url_for('static', filename=libro.portada) }}" alt="Portada de {{ libro.titulo }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                        <span class="material-symbols-outlined text-6xl mb-4">menu_book</span>
+                        <span class="text-sm font-medium">{{ libro.titulo }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Info del libro -->
+        <div class="flex-1 flex flex-col">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-2 leading-tight">{{ libro.titulo }}</h1>
+                    <p class="text-lg text-slate-600 dark:text-slate-400 font-medium">{{ libro.autor }}</p>
+                </div>
+                <!-- Favorito -->
+                <button onclick="toggleFavoriteDetails({{ libro.id }}, {{ libro.es_favorito }}, this)" class="p-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all {% if libro.es_favorito == 1 %}text-amber-400{% else %}text-slate-400{% endif %}" title="Favorito">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' {% if libro.es_favorito == 1 %}1{% else %}0{% endif %};">star</span>
+                </button>
+            </div>
+
+            <!-- Metadatos y Etiquetas -->
+            <div class="flex flex-wrap gap-3 mb-8">
+                {% if libro.genero %}
+                <span class="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-semibold tracking-wide uppercase">
+                    {{ libro.genero }}
+                </span>
+                {% endif %}
+                {% if libro.idioma %}
+                <span class="flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-semibold tracking-wide uppercase">
+                    <span class="material-symbols-outlined text-[14px]">language</span>
+                    {{ libro.idioma }}
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Progreso -->
+            {% if libro.progreso > 0 %}
+            <div class="mb-8 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div class="flex justify-between items-end mb-2">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ t('Progreso de lectura') }}</p>
+                    <p class="text-primary font-bold">{{ libro.progreso }}%</p>
+                </div>
+                <div class="h-2.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full transition-all duration-500" style="width: {{ libro.progreso }}%;"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Sinopsis -->
+            <div class="flex-1 mb-8">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">{{ t('Sinopsis') }}</h3>
+                <div class="text-sm text-slate-600 dark:text-slate-400 overflow-y-auto pr-2 max-h-48 leading-relaxed text-justify relative">
+                    {% if libro.sinopsis %}
+                        <!-- El filtro safe permite renderizar las cursivas y saltos de línea del ePub -->
+                        {{ libro.sinopsis | safe }}
+                    {% else %}
+                        <p class="italic">{{ t('No hay sinopsis disponible para este libro.') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botón Leer -->
+            <div class="mt-auto">
+                <button onclick="window.location.href='{{ url_for('read_book', book_id=libro.id) }}'" class="w-full md:w-auto bg-primary hover:bg-blue-700 text-white px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/20 text-lg">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    {% if libro.progreso > 0 %}
+                        {{ t('Continuar Leyendo') }}
+                    {% else %}
+                        {{ t('Comenzar a Leer') }}
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function toggleFavoriteDetails(bookId, currentStatus, btnElement) {
+        if (!window.pywebview || !window.pywebview.api) return;
+        try {
+            const newStatus = await window.pywebview.api.toggle_favorite(bookId, currentStatus);
+            const icon = btnElement.querySelector('.material-symbols-outlined');
+            
+            btnElement.setAttribute('onclick', `toggleFavoriteDetails(${bookId}, ${newStatus}, this)`);
+            
+            if (newStatus === 1) {
+                btnElement.classList.add('text-amber-400');
+                btnElement.classList.remove('text-slate-400');
+                icon.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                btnElement.classList.remove('text-amber-400');
+                btnElement.classList.add('text-slate-400');
+                icon.style.fontVariationSettings = "'FILL' 0";
+            }
+        } catch (error) {
+            console.error("Error al cambiar estado de favorito:", error);
+        }
+    }
+</script>
+{% endblock %}

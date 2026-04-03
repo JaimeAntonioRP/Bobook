@@ -1,26 +1,38 @@
 {% extends 'base.html' %}
 
-{% block title %}Mi Biblioteca - Reader Pro{% endblock %}
+{% block title %}{{ t('Mi Biblioteca') }} - Reader Pro{% endblock %}
 
 {% block content %}
 <section>
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold flex items-center gap-2">
+            {% if init_favorites %}
+            <span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span>
+            {{ t('Mis Favoritos') }}
+            {% else %}
             <span class="material-symbols-outlined text-primary">library_books</span>
-            Mi Biblioteca
+            {{ t('Mi Biblioteca') }}
+            {% endif %}
         </h2>
-        <button onclick="addBook()" class="bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20">
-            <span class="material-symbols-outlined">add</span>
-            Agregar Libro
-        </button>
+        <div class="flex items-center gap-3">
+            <button onclick="addBook()" class="bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined">add</span>
+                {{ t('Agregar Libro') }}
+            </button>
+        </div>
     </div>
 
     {% if libros %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div id="libraryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {% for libro in libros %}
-        <div class="group cursor-pointer relative" onclick="window.location.href='{{ url_for('read_book', book_id=libro.id) }}'">
+        <div class="group cursor-pointer relative book-card" data-favorite="{{ libro.es_favorito }}" onclick="window.location.href='{{ url_for('book_details', book_id=libro.id) }}'">
+            <!-- Botón de favorito -->
+            <button onclick="toggleFavoriteLibrary({{ libro.id }}, {{ libro.es_favorito }}, this, event)" class="absolute top-2 left-2 p-1.5 rounded-lg z-10 shadow-md bg-white/80 dark:bg-black/50 backdrop-blur-sm transition-all hover:scale-110 {% if libro.es_favorito == 1 %}text-amber-400{% else %}text-slate-400 opacity-0 group-hover:opacity-100{% endif %}" title="{% if libro.es_favorito == 1 %}{{ t('Quitar de favoritos') }}{% else %}{{ t('Añadir a favoritos') }}{% endif %}">
+                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' {% if libro.es_favorito == 1 %}1{% else %}0{% endif %};">star</span>
+            </button>
+            
             <!-- Botón de eliminar -->
-            <button onclick="openDeleteModal({{ libro.id }}, event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md" title="Eliminar libro">
+            <button onclick="openDeleteModal({{ libro.id }}, event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md" title="{{ t('Eliminar libro') }}">
                 <span class="material-symbols-outlined text-[18px]">delete</span>
             </button>
             
@@ -45,8 +57,8 @@
     {% else %}
     <div class="text-center py-20 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
         <span class="material-symbols-outlined text-5xl text-slate-400 mb-4">book</span>
-        <h3 class="text-xl font-bold text-slate-600 dark:text-slate-300">Tu biblioteca está vacía</h3>
-        <p class="text-slate-500 mt-2">Haz clic en "Agregar Libro" para empezar a construir tu colección.</p>
+        <h3 class="text-xl font-bold text-slate-600 dark:text-slate-300">{{ t('Tu biblioteca está vacía') }}</h3>
+        <p class="text-slate-500 mt-2">{{ t('Haz clic en "Agregar Libro" para empezar a construir tu colección.') }}</p>
     </div>
     {% endif %}
 </section>
@@ -62,13 +74,13 @@
                 <span class="material-symbols-outlined">delete_forever</span>
             </div>
             <div>
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Eliminar libro</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400">¿Estás seguro? Esta acción no se puede deshacer y perderás tu progreso.</p>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ t('Eliminar libro') }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('¿Estás seguro? Esta acción no se puede deshacer y perderás tu progreso.') }}</p>
             </div>
         </div>
         <div class="flex gap-3 justify-end mt-6">
-            <button onclick="closeDeleteModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Cancelar</button>
-            <button onclick="executeDelete()" class="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl shadow-lg shadow-red-500/20 transition-all transform hover:scale-[1.02] active:scale-95">Sí, eliminar</button>
+            <button onclick="closeDeleteModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">{{ t('Cancelar') }}</button>
+            <button onclick="executeDelete()" class="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl shadow-lg shadow-red-500/20 transition-all transform hover:scale-[1.02] active:scale-95">{{ t('Sí, eliminar') }}</button>
         </div>
     </div>
 </div>
@@ -97,5 +109,90 @@
         await window.pywebview.api.delete_book(bookIdToDelete);
         window.location.reload();
     }
+
+    // --- Lógica para el filtro y botón de favoritos en biblioteca ---
+    let showOnlyFavorites = {% if init_favorites %}true{% else %}false{% endif %};
+
+    function applyFilter() {
+        const searchInput = document.getElementById('searchInput');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const books = document.querySelectorAll('.book-card');
+        
+        books.forEach(book => {
+            const isFav = book.getAttribute('data-favorite') === '1';
+            
+            const title = book.querySelector('h4').textContent.toLowerCase();
+            const ps = book.querySelectorAll('p');
+            const author = ps.length > 0 ? ps[0].textContent.toLowerCase() : '';
+            const genre = ps.length > 1 ? ps[1].textContent.toLowerCase() : '';
+            
+            const matchesSearch = title.includes(searchTerm) || author.includes(searchTerm) || genre.includes(searchTerm);
+            
+            if ((showOnlyFavorites && !isFav) || !matchesSearch) {
+                book.style.display = 'none';
+            } else {
+                book.style.display = 'block';
+            }
+        });
+    }
+
+    async function toggleFavoriteLibrary(bookId, currentStatus, btnElement, event) {
+        event.stopPropagation(); // Evitar que se abra el libro al hacer clic en la estrella
+        if (!window.pywebview || !window.pywebview.api) return;
+        
+        try {
+            const newStatus = await window.pywebview.api.toggle_favorite(bookId, currentStatus);
+            const icon = btnElement.querySelector('.material-symbols-outlined');
+            const bookCard = btnElement.closest('.book-card');
+            
+            bookCard.setAttribute('data-favorite', newStatus);
+            btnElement.setAttribute('onclick', `toggleFavoriteLibrary(${bookId}, ${newStatus}, this, event)`);
+            
+            if (newStatus === 1) {
+                btnElement.classList.add('text-amber-400');
+                btnElement.classList.remove('text-slate-400', 'opacity-0', 'group-hover:opacity-100');
+                btnElement.title = "{{ t('Quitar de favoritos') }}";
+                icon.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                btnElement.classList.remove('text-amber-400');
+                btnElement.classList.add('text-slate-400', 'opacity-0', 'group-hover:opacity-100');
+                btnElement.title = "{{ t('Añadir a favoritos') }}";
+                icon.style.fontVariationSettings = "'FILL' 0";
+            }
+            
+            // Reaplicar el filtro por si desmarcamos un favorito mientras el filtro estaba activo
+            if (showOnlyFavorites) applyFilter();
+        } catch (error) {
+            console.error("Error al cambiar estado de favorito:", error);
+        }
+    }
+
+    // Inicializar filtro si venimos de la sección de favoritos
+    {% if init_favorites %}
+    applyFilter();
+    {% endif %}
+
+    // --- Evento de escucha para la barra de búsqueda ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilter);
+        }
+    });
+
+    // --- Lógica para tamaño de portadas dinámico ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const grid = document.getElementById('libraryGrid');
+        if (grid) {
+            const size = localStorage.getItem('app_cover_size') || 'medium';
+            if (size === 'small') {
+                grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
+            } else if (size === 'large') {
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-8';
+            } else {
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6';
+            }
+        }
+    });
 </script>
 {% endblock %}

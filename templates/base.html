@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -13,12 +13,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme_default.css') }}">
 
     <script>
+        // Cargar preferencias globales antes de renderizar la UI
+        const appPrimaryColor = localStorage.getItem('app_primary_color') || '#135bec';
+        const appTheme = localStorage.getItem('app_theme') || 'dark';
+        const appLang = localStorage.getItem('app_lang') || 'es';
+        
+        if (appTheme === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#135bec",
+                        "primary": appPrimaryColor,
                         "background-light": "#f6f6f8",
                         "background-dark": "#101622",
                     },
@@ -52,7 +63,7 @@
                 <div class="flex items-center gap-6">
                     <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        Library Synced
+                        {{ t('Library Synced') }}
                     </div>
                 </div>
             </div>

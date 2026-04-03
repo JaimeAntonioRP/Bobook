@@ -4,9 +4,13 @@
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary">
                 <span class="material-symbols-outlined text-[20px]">search</span>
             </div>
-            <input class="block w-full pl-10 pr-12 py-2 border-none bg-slate-200/50 dark:bg-[#1c1f27] rounded-xl focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-500" placeholder="Search your library, authors, or genres..." type="text"/>
+            <input id="searchInput" autocomplete="off" class="block w-full pl-10 pr-12 py-2 border-none bg-slate-200/50 dark:bg-[#1c1f27] rounded-xl focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-500" placeholder="{{ t('Search your library, authors, or genres...') }}" type="text"/>
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                 <kbd class="hidden sm:inline-block px-1.5 py-0.5 border border-slate-300 dark:border-slate-700 rounded text-[10px] text-slate-400">⌘K</kbd>
+            </div>
+            
+            <!-- Contenedor de Resultados (Estilo Facebook) -->
+            <div id="searchResults" class="absolute top-full mt-2 w-full bg-white dark:bg-[#1c1f27] border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl hidden flex-col overflow-hidden z-50 divide-y divide-slate-100 dark:divide-slate-800/50">
             </div>
         </div>
     </div>
@@ -19,9 +23,80 @@
         <div class="flex items-center gap-3">
             <div class="text-right hidden sm:block">
                 <p class="text-xs font-semibold">Alex Rivera</p>
-                <p class="text-[10px] text-slate-500">Premium Plan</p>
+                <p class="text-[10px] text-slate-500">{{ t('Premium Plan') }}</p>
             </div>
             <div class="h-10 w-10 rounded-full bg-center bg-cover border-2 border-white dark:border-slate-700" style="background-color: #333;"></div>
         </div>
     </div>
+
+    <script>
+        // Atajo de teclado ⌘K o Ctrl+K para enfocar la barra de búsqueda
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        });
+
+        // Lógica de autocompletado y búsqueda global
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        let searchTimeout;
+
+        if (searchInput && searchResults) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.classList.add('hidden');
+                    if (typeof applyFilter === 'function') applyFilter(); // Filtra la vista si estamos en biblioteca
+                    return;
+                }
+
+                searchTimeout = setTimeout(async () => {
+                    if (window.pywebview && window.pywebview.api) {
+                        const results = await window.pywebview.api.search_books(query);
+                        searchResults.innerHTML = '';
+                        
+                        if (results.length > 0) {
+                            results.forEach(book => {
+                                const div = document.createElement('div');
+                                div.className = "flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer transition-colors";
+                                div.onclick = () => window.location.href = `/book/${book.id}`;
+                                
+                                const coverHtml = book.portada 
+                                    ? `<img src="/static/${book.portada}" class="w-10 h-14 object-cover rounded shadow-sm">` 
+                                    : `<div class="w-10 h-14 bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded text-slate-400"><span class="material-symbols-outlined text-[20px]">menu_book</span></div>`;
+                                
+                                div.innerHTML = `
+                                    ${coverHtml}
+                                    <div class="flex-1 overflow-hidden">
+                                        <h4 class="text-sm font-bold truncate text-slate-900 dark:text-white">${book.titulo}</h4>
+                                        <p class="text-xs text-slate-500 truncate">${book.autor}</p>
+                                    </div>
+                                `;
+                                searchResults.appendChild(div);
+                            });
+                        } else {
+                            searchResults.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">{{ t("No se encontraron coincidencias") }}</div>';
+                        }
+                        searchResults.classList.remove('hidden');
+                    }
+                    
+                    if (typeof applyFilter === 'function') applyFilter(); // Filtra la vista si estamos en biblioteca
+                }, 250); // Pequeño retraso para no sobrecargar de peticiones al escribir rápido
+            });
+
+            // Ocultar resultados al hacer clic fuera
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+        }
+    </script>
 </header>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Leyendo: {{ libro.titulo }} - Reader Pro</title>
+    <title>{{ t('Leyendo') }}: {{ libro.titulo }} - Reader Pro</title>
     
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     
@@ -17,12 +17,22 @@
     <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 
     <script>
+        // Cargar preferencias globales
+        const appPrimaryColor = localStorage.getItem('app_primary_color') || '#135bec';
+        const appTheme = localStorage.getItem('app_theme') || 'dark';
+        
+        if (appTheme === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#135bec",
+                        "primary": appPrimaryColor,
                         "background-light": "#f6f6f8",
                         "background-dark": "#101622",
                     },
@@ -41,11 +51,11 @@
     <header id="readerHeader" class="absolute top-0 left-0 w-full flex items-center justify-between px-6 py-2 bg-white/90 dark:bg-[#111318]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-30 shadow-sm transition-transform duration-300 translate-y-0">
         <div class="flex items-center gap-4">
             <!-- Botón de Índice -->
-            <button onclick="toggleTOC()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Índice de Capítulos">
+            <button onclick="toggleTOC()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="{{ t('Índice de Capítulos') }}">
                 <span class="material-symbols-outlined">menu</span>
             </button>
             <!-- Botón para regresar, usa history.back() para volver a donde estábamos -->
-            <button onclick="history.back()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Regresar">
+            <button onclick="history.back()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="{{ t('Regresar') }}">
                 <span class="material-symbols-outlined">arrow_back</span>
             </button>
             <div>
@@ -55,11 +65,15 @@
         </div>
         <div class="flex items-center gap-4">
             <!-- Botón de Configuración -->
-            <button onclick="toggleSettings()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Configuración de lectura">
+            <button onclick="toggleSettings()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="{{ t('Configuración de lectura') }}">
                 <span class="material-symbols-outlined">text_format</span>
             </button>
+            <!-- Botón de Favorito -->
+            <button id="favoriteBtn" onclick="toggleFavorite()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400">
+                <span id="favoriteIcon" class="material-symbols-outlined transition-all">star</span>
+            </button>
             <!-- Botón de Pantalla Completa -->
-            <button onclick="toggleFullscreen()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="Pantalla Completa">
+            <button onclick="toggleFullscreen()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex items-center justify-center text-slate-600 dark:text-slate-400" title="{{ t('Pantalla Completa') }}">
                 <span id="fullscreenIcon" class="material-symbols-outlined">fullscreen</span>
             </button>
         </div>
@@ -67,8 +81,8 @@
 
     <!-- Pie de página (Progreso de lectura Flotante) -->
     <footer id="readerFooter" class="absolute bottom-0 left-0 w-full px-6 py-2 bg-white/90 dark:bg-[#111318]/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-30 flex justify-between items-center transition-transform duration-300 translate-y-0">
-        <span id="chapterName" class="text-xs font-semibold text-slate-500 truncate max-w-[50%]">Cargando contenido...</span>
-        <span id="readingProgress" class="text-xs font-bold text-primary">Calculando...</span>
+        <span id="chapterName" class="text-xs font-semibold text-slate-500 truncate max-w-[50%]">{{ t('Cargando contenido...') }}</span>
+        <span id="readingProgress" class="text-xs font-bold text-primary">{{ t('Calculando...') }}</span>
     </footer>
 
     <!-- Área de Lectura (Fondo completo) -->
@@ -86,7 +100,7 @@
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
             <h2 class="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                 <span class="material-symbols-outlined text-primary">format_list_bulleted</span>
-                Índice
+                {{ t('Índice') }}
             </h2>
             <button onclick="toggleTOC()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
                 <span class="material-symbols-outlined">close</span>
@@ -94,7 +108,6 @@
         </div>
         <div id="tocContent" class="flex-1 overflow-y-auto p-4 space-y-1">
             <!-- Los capítulos se cargarán aquí desde JS -->
-            <p class="text-sm text-slate-500 text-center mt-10">Cargando índice...</p>
         </div>
     </aside>
 
@@ -104,7 +117,7 @@
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
             <h2 class="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                 <span class="material-symbols-outlined text-primary">tune</span>
-                Apariencia
+                {{ t('Apariencia') }}
             </h2>
             <button onclick="toggleSettings()" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
                 <span class="material-symbols-outlined">close</span>
@@ -112,34 +125,34 @@
         </div>
         <div class="p-6 space-y-8 flex-1 overflow-y-auto">
             <div>
-                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">auto_awesome_mosaic</span> Diseño</h3>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">auto_awesome_mosaic</span> {{ t('Diseño') }}</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <button id="btn-layout-1col" onclick="applyLayout('1col')" class="layout-btn text-slate-700 dark:text-slate-300 h-12 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs hover:border-primary transition-all shadow-sm flex flex-col items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-[18px]">article</span>1 Columna
+                        <span class="material-symbols-outlined text-[18px]">article</span>{{ t('1 Columna') }}
                     </button>
                     <button id="btn-layout-2col" onclick="applyLayout('2col')" class="layout-btn border-primary bg-primary/10 text-primary h-12 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs hover:border-primary transition-all shadow-sm flex flex-col items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-[18px]">menu_book</span>2 Columnas
+                        <span class="material-symbols-outlined text-[18px]">menu_book</span>{{ t('2 Columnas') }}
                     </button>
                 </div>
             </div>
             <div>
-                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">font_download</span> Fuente</h3>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">font_download</span> {{ t('Fuente') }}</h3>
                 <select id="fontSelector" onchange="changeFont(this.value)" class="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none cursor-pointer">
-                    <optgroup label="Serif (Recomendadas)">
+                    <optgroup label="{{ t('Serif (Recomendadas)') }}">
                         <option value="Lora">Lora</option>
                         <option value="Georgia">Georgia</option>
                         <option value="Palatino Linotype">Palatino</option>
                         <option value="Book Antiqua">Book Antiqua</option>
                         <option value="Garamond">Garamond</option>
                     </optgroup>
-                    <optgroup label="Sans-Serif (Modernas)">
+                    <optgroup label="{{ t('Sans-Serif (Modernas)') }}">
                         <option value="Inter">Inter</option>
                         <option value="Arial">Arial</option>
                         <option value="Helvetica">Helvetica</option>
                         <option value="Verdana">Verdana</option>
                         <option value="Tahoma">Tahoma</option>
                     </optgroup>
-                    <optgroup label="Otras">
+                    <optgroup label="{{ t('Otras') }}">
                         <option value="Times New Roman">Times New Roman</option>
                         <option value="Trebuchet MS">Trebuchet MS</option>
                         <option value="Century Gothic">Century Gothic</option>
@@ -150,7 +163,7 @@
                 </select>
             </div>
             <div>
-                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">format_size</span> Tamaño de texto</h3>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">format_size</span> {{ t('Tamaño de texto') }}</h3>
                 <div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     <button onclick="changeFontSize(-10)" class="flex-1 py-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 shadow-sm transition-all">-</button>
                     <span id="fontSizeDisplay" class="text-sm font-bold w-12 text-center text-primary">100%</span>
@@ -158,11 +171,11 @@
                 </div>
             </div>
             <div>
-                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">palette</span> Tema</h3>
+                <h3 class="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">palette</span> {{ t('Tema') }}</h3>
                 <div class="grid grid-cols-3 gap-3">
-                    <button onclick="applyTheme('light')" class="h-14 rounded-xl border-2 border-slate-200 bg-white text-black font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-white border border-slate-300"></div>Claro</button>
-                    <button onclick="applyTheme('sepia')" class="h-14 rounded-xl border-2 border-[#e6d9b9] bg-[#f4ecd8] text-[#5b4636] font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-[#f4ecd8] border border-[#d5c39b]"></div>Sepia</button>
-                    <button onclick="applyTheme('dark')" class="h-14 rounded-xl border-2 border-slate-700 bg-[#121212] text-slate-300 font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-[#121212] border border-slate-600"></div>Oscuro</button>
+                    <button onclick="applyTheme('light')" class="h-14 rounded-xl border-2 border-slate-200 bg-white text-black font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-white border border-slate-300"></div>{{ t('Claro') }}</button>
+                    <button onclick="applyTheme('sepia')" class="h-14 rounded-xl border-2 border-[#e6d9b9] bg-[#f4ecd8] text-[#5b4636] font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-[#f4ecd8] border border-[#d5c39b]"></div>{{ t('Sepia') }}</button>
+                    <button onclick="applyTheme('dark')" class="h-14 rounded-xl border-2 border-slate-700 bg-[#121212] text-slate-300 font-semibold text-xs hover:border-primary transition-all flex flex-col items-center justify-center gap-1 shadow-sm"><div class="w-4 h-4 rounded-full bg-[#121212] border border-slate-600"></div>{{ t('Oscuro') }}</button>
                 </div>
             </div>
         </div>
@@ -176,6 +189,8 @@
         const book = ePub(bookUrl);
         
         let rendition;
+        let isFavorite = {{ libro.es_favorito | default(0) | int }};
+        const bookId = {{ libro.id }};
         let currentFontSize = parseInt(localStorage.getItem('reader_fontSize')) || 100;
         let currentTheme = localStorage.getItem('reader_theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         let currentLayout = localStorage.getItem('reader_layout') || '2col';
@@ -320,7 +335,7 @@
             tocContent.innerHTML = ''; // Limpiamos el mensaje de "Cargando..."
             
             if (toc.length === 0) {
-                tocContent.innerHTML = '<p class="text-sm text-slate-500 text-center mt-10">Este libro no tiene índice.</p>';
+                tocContent.innerHTML = '<p class="text-sm text-slate-500 text-center mt-10">{{ t("Este libro no tiene índice.") }}</p>';
                 return;
             }
 
@@ -404,6 +419,38 @@
             rendition.on('keyup', handleKeyboard);
         }
         setupRenditionEvents();
+
+        // --- Lógica de Favoritos ---
+        const favoriteIcon = document.getElementById('favoriteIcon');
+        const favoriteBtn = document.getElementById('favoriteBtn');
+
+        function updateFavoriteUI() {
+            if (isFavorite) {
+                favoriteIcon.style.fontVariationSettings = "'FILL' 1";
+                favoriteIcon.classList.add('text-amber-400');
+                favoriteBtn.title = "{{ t('Quitar de favoritos') }}";
+            } else {
+                favoriteIcon.style.fontVariationSettings = "'FILL' 0";
+                favoriteIcon.classList.remove('text-amber-400');
+                favoriteBtn.title = "{{ t('Añadir a favoritos') }}";
+            }
+        }
+
+        async function toggleFavorite() {
+            if (!window.pywebview || !window.pywebview.api) {
+                console.warn("Pywebview API not available.");
+                return;
+            }
+            try {
+                const newStatus = await window.pywebview.api.toggle_favorite(bookId, isFavorite);
+                isFavorite = newStatus;
+                updateFavoriteUI();
+            } catch (error) {
+                console.error("Error al cambiar estado de favorito:", error);
+                alert("No se pudo guardar el cambio de favorito.");
+            }
+        }
+        updateFavoriteUI();
 
         // Funciones de Control de Interfaz
         function toggleTOC() {
